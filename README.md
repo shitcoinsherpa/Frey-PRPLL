@@ -8,11 +8,12 @@ PRPLL (by Mihai Preda, with contributions from George Woltman) is the leading GP
 
 Tested on **NVIDIA GeForce RTX 4090** (Ada Lovelace, sm_89, 24GB VRAM):
 
-| Exponent | FFT Size | bpw | µs/iter | iter/s | Notes |
-|----------|----------|------|---------|--------|-------|
-| 136M | 4M | 32.49 | 264 | 3,788 | tuned, NTT GF31+GF61 |
+| Exponent | FFT Config | µs/iter | iter/s | Notes |
+|----------|------------|---------|--------|-------|
+| 100M | 3:512:16:256:202 | 264 | 3,788 | tuned, NTT GF31+GF61 |
+| 146M | 1:512:8:512:202 | 359 | 2,786 | tuned, NTT GF31+GF61 (live PRP) |
 
-The 136M result uses FFT config `3:512:16:256:202` (NTT over GF(2^31-1) x GF(2^61-1)), found via `-tune`. For comparison, the best documented OpenCL PRPLL result on RTX 4090 for this exponent range is ~425 µs/iter ([NVIDIA Developer Forums](https://forums.developer.nvidia.com/t/integer-ntt-on-rtx-20xx-a100-vs-rtx-30xx-40xx-50xx/350124)).
+For comparison, the best documented OpenCL PRPLL result on RTX 4090 at ~140M is ~425 µs/iter ([NVIDIA Developer Forums](https://forums.developer.nvidia.com/t/integer-ntt-on-rtx-20xx-a100-vs-rtx-30xx-40xx-50xx/350124)). Frey-PRPLL is **~15% faster** at the same exponent range.
 
 Other NVIDIA GPUs with CUDA 12.0+ should work but have not been benchmarked yet. Performance will scale with GPU compute capability and memory bandwidth. Use `-tune` to find the optimal FFT configuration for your hardware.
 
