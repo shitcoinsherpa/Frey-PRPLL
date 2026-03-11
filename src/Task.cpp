@@ -126,7 +126,7 @@ vector<string> tailFields(const std::string &AID, const Args &args) {
   assert(*VERSION); // version string isn't empty
   OsInfo os = getOsInfo();
   return {json("program", vector<string>{
-                 json("name", "prpll"),
+                 json("name", "frey-prpll"),
                  json("version", (VERSION[0] == 'v') ? VERSION + 1 : VERSION), // skip leading "v" from version
                  json("port", platform()),
                  json("os", vector<string>{

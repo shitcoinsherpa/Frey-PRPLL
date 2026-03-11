@@ -556,23 +556,23 @@ Gpu::Gpu(Queue* q, GpuCommon shared, FFTConfig fft, u64 E, const vector<KeyVal>&
                                                !tail_single_wide && !tail_single_kernel ? hN / nH - SMALL_H / nH * 2 : // Double-wide tailSquare with two kernels
                                                !tail_single_wide ? hN / nH :                                           // Double-wide tailSquare with one kernel
                                                !tail_single_kernel ? hN / nH / 2 - SMALL_H / nH :                      // Single-wide tailSquare with two kernels
-                                               hN / nH / 2),                                                           // Single-wide tailSquare with one kernel
+                                               hN / nH / 2, "-DCUDA_MIN_BLOCKS=3"),                                    // Single-wide tailSquare with one kernel
   K(ktailMulGF31,          "tailmul.cl", "tailMulGF31", hN / nH / 2),
   K(ktailMulLowGF31,       "tailmul.cl", "tailMulGF31", hN / nH / 2, "-DMUL_LOW=1"),
   K(kfftMidOutGF31,        "fftmiddleout.cl", "fftMiddleOutGF31", hN / (BIG_H / SMALL_H)),
   K(kfftWGF31,             "fftw.cl", "fftWGF31", hN / nW),
 
-  K(kfftMidInGF61,         "fftmiddlein.cl",  "fftMiddleInGF61",  hN / (BIG_H / SMALL_H)),
+  K(kfftMidInGF61,         "fftmiddlein.cl",  "fftMiddleInGF61",  hN / (BIG_H / SMALL_H), "-DCUDA_MIN_BLOCKS=3"),
   K(kfftHinGF61,           "ffthin.cl",  "fftHinGF61",  hN / nH),
   K(ktailSquareZeroGF61,   "tailsquare.cl", "tailSquareZeroGF61", SMALL_H / nH * 2),
   K(ktailSquareGF61,       "tailsquare.cl", "tailSquareGF61",
                                                !tail_single_wide && !tail_single_kernel ? hN / nH - SMALL_H / nH * 2 : // Double-wide tailSquare with two kernels
                                                !tail_single_wide ? hN / nH :                                           // Double-wide tailSquare with one kernel
                                                !tail_single_kernel ? hN / nH / 2 - SMALL_H / nH :                      // Single-wide tailSquare with two kernels
-                                               hN / nH / 2),                                                           // Single-wide tailSquare with one kernel
+                                               hN / nH / 2, "-DCUDA_MIN_BLOCKS=3"),                                    // Single-wide tailSquare with one kernel
   K(ktailMulGF61,          "tailmul.cl", "tailMulGF61", hN / nH / 2),
   K(ktailMulLowGF61,       "tailmul.cl", "tailMulGF61", hN / nH / 2, "-DMUL_LOW=1"),
-  K(kfftMidOutGF61,        "fftmiddleout.cl", "fftMiddleOutGF61", hN / (BIG_H / SMALL_H)),
+  K(kfftMidOutGF61,        "fftmiddleout.cl", "fftMiddleOutGF61", hN / (BIG_H / SMALL_H), "-DCUDA_MIN_BLOCKS=3"),
   K(kfftWGF61,             "fftw.cl", "fftWGF61", hN / nW),
 
   K(kfftP,                 "fftp.cl", "fftP", hN / nW),
@@ -581,11 +581,11 @@ Gpu::Gpu(Queue* q, GpuCommon shared, FFTConfig fft, u64 E, const vector<KeyVal>&
   K(kCarryM,               "carry.cl", "carry", hN / CARRY_LEN, "-DMUL3=1"),
   K(kCarryMROE,            "carry.cl", "carry", hN / CARRY_LEN, "-DMUL3=1 -DROE=1"),
   K(kCarryLL,              "carry.cl", "carry", hN / CARRY_LEN, "-DLL=1"),
-  K(kCarryFused,           "carryfused.cl", "carryFused", WIDTH * (BIG_H + 1) / nW),
-  K(kCarryFusedROE,        "carryfused.cl", "carryFused", WIDTH * (BIG_H + 1) / nW, "-DROE=1"),
-  K(kCarryFusedMul,        "carryfused.cl", "carryFused", WIDTH * (BIG_H + 1) / nW, "-DMUL3=1"),
-  K(kCarryFusedMulROE,     "carryfused.cl", "carryFused", WIDTH * (BIG_H + 1) / nW, "-DMUL3=1 -DROE=1"),
-  K(kCarryFusedLL,         "carryfused.cl", "carryFused", WIDTH * (BIG_H + 1) / nW, "-DLL=1"),
+  K(kCarryFused,           "carryfused.cl", "carryFused", WIDTH * (BIG_H + 1) / nW, "-DCUDA_MIN_BLOCKS=3"),
+  K(kCarryFusedROE,        "carryfused.cl", "carryFused", WIDTH * (BIG_H + 1) / nW, "-DROE=1 -DCUDA_MIN_BLOCKS=3"),
+  K(kCarryFusedMul,        "carryfused.cl", "carryFused", WIDTH * (BIG_H + 1) / nW, "-DMUL3=1 -DCUDA_MIN_BLOCKS=3"),
+  K(kCarryFusedMulROE,     "carryfused.cl", "carryFused", WIDTH * (BIG_H + 1) / nW, "-DMUL3=1 -DROE=1 -DCUDA_MIN_BLOCKS=3"),
+  K(kCarryFusedLL,         "carryfused.cl", "carryFused", WIDTH * (BIG_H + 1) / nW, "-DLL=1 -DCUDA_MIN_BLOCKS=3"),
 
   K(carryB,                "carryb.cl", "carryB",   hN / CARRY_LEN),
 
@@ -1281,6 +1281,7 @@ void Gpu::square(Buffer<Word>& out, Buffer<Word>& in, enum LEAD_TYPE leadIn, enu
 u32 Gpu::squareLoop(Buffer<Word>& out, Buffer<Word>& in, u64 from, u64 to, bool doTailMul3) {
   assert(from < to);
   enum LEAD_TYPE leadIn = LEAD_NONE;
+
   for (u64 k = from; k < to; ++k) {
     enum LEAD_TYPE leadOut = useLongCarry || (k == to - 1) ? LEAD_NONE : LEAD_WIDTH;
     square(out, (k==from) ? in : out, leadIn, leadOut, doTailMul3 && (k == to - 1));

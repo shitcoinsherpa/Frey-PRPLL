@@ -1,19 +1,57 @@
+# Build artifacts
+build-*/
 src/bundle.cpp
-tmp?/
-__pycache__
-CMakeLists.txt.user
-good*
-build-*
 src/version.inc
+CMakeLists.txt.user
+
+# Runtime artifacts
 *.log
-t?
-results.txt
-kernel-cache
+config.txt
+kernel-cache/
+*.ptx
+*.cu.dump
+
+# Test / benchmark output
+test-run/
+results*.txt
+worktodo*.txt
+tune.txt
+tune_opencl.txt
+test_out.txt
+help_out.txt
+z.txt
+ztune.txt
+
+# Checkpoint / proof directories (exponent-named)
+[0-9]*/
 prp-*/
 ll-*/
 proof-*/
-config.txt
-txt/
-bug/
+proof/
+
+# Scripts (dev-local)
+run_test.bat
+run_test.ps1
+m.sh
+
+# Compilation failure dumps
+frey-prpll_fail_*.cu
+failed_ptx.ptx
+
+# Old names
 prpll-debug
 prpll-release
+
+# Misc
+tmp?/
+__pycache__
+good*
+t?
+txt/
+bug/
+
+# IDE / AI
+CLAUDE.md
+.claude/
+.cursor/
+.vscode/

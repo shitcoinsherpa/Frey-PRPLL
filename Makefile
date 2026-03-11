@@ -63,20 +63,20 @@ DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
 COMPILE.cc = $(CXX) $(DEPFLAGS) $(CXXFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -c
 POSTCOMPILE = @mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d && touch $@
 
-all: prpll
+all: frey-prpll
 
-prpll: $(BIN)/prpll
+frey-prpll: $(BIN)/frey-prpll
 
-amd: $(BIN)/prpll-amd
+amd: $(BIN)/frey-prpll-amd
 
 #$(BIN)/test: $(BIN)/test.o
 #	$(CXX) $(CXXFLAGS) -o $@ $< $(LIBPATH) ${STRIP}
 
-$(BIN)/prpll: ${OBJS}
+$(BIN)/frey-prpll: ${OBJS}
 	$(CXX) $(CXXFLAGS) -o $@ ${OBJS} $(LIBPATH) $(OPENCL_LIBS) ${STRIP}
 
 # Instead of linking with libOpenCL, link with libamdocl64
-$(BIN)/prpll-amd: ${OBJS}
+$(BIN)/frey-prpll-amd: ${OBJS}
 	$(CXX) $(CXXFLAGS) -o $@ ${OBJS} $(LIBPATH) -lamdocl64 -L/opt/rocm/lib ${STRIP}
 
 clean:

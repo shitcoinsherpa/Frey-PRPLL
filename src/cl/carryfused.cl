@@ -11,8 +11,7 @@ void spin() {
 #elif HAS_ASM
   __asm("s_sleep 0");
 #else
-  // nothing: just spin
-  // on Nvidia: see if there's some brief sleep function
+  // NVIDIA: carries arrive within 1-2 spin iterations, any sleep adds overhead.
 #endif
 }
 
@@ -297,7 +296,7 @@ KERNEL(G_W) carryFused(P(F2) out, CP(F2) in, u32 posROE, P(i64) carryShuttle, P(
   // Apply the inverse weights and carry propagate pairs to generate the output carries
 
   F invBase = optionalDouble(weights.x);
-  
+
   for (u32 i = 0; i < NW; ++i) {
     F invWeight1 = i == 0 ? invBase : optionalDouble(fancyMul(invBase, iweightStep(i)));
     F invWeight2 = optionalDouble(fancyMul(invWeight1, IWEIGHT_STEP));

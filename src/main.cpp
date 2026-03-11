@@ -24,8 +24,8 @@ void gpuWorker(GpuCommon shared, Queue *q, i32 instance) {
   // LogContext context{(instance ? shared.args->tailDir() : ""s) + to_string(instance) + ' '};
   // log("Starting worker %d\n", instance);
   if (instance > 0) {
-    initLog(("gpuowl-"s + to_string(instance) + ".log").c_str());
-    log("PRPLL %s, instance %d\n", VERSION, instance);
+    initLog(("frey-prpll-"s + to_string(instance) + ".log").c_str());
+    log("Frey-PRPLL %s, instance %d\n", VERSION, instance);
   }
 
   try {
@@ -75,8 +75,8 @@ int main(int argc, char **argv) {
       poolDir = args.masterDir;
     }
 
-    initLog("gpuowl-0.log");
-    log("PRPLL %s starting\n", VERSION);
+    initLog("frey-prpll.log");
+    log("Frey-PRPLL %s starting\n", VERSION);
 
     Args args;
 

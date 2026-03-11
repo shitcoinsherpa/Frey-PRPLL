@@ -1,5 +1,5 @@
 
-add_executable(prpll
+add_executable(frey-prpll
   Trig.cpp
   Primes.cpp
   bundle.cpp
@@ -28,17 +28,30 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_CXX_COMPILER g++-14)
 endif()
 
-find_package(OpenCL)
+option(USE_CUDA "Use CUDA backend instead of OpenCL" OFF)
 
-if (${OpenCL_FOUND})
-  # Use OpenCL library found by cmake
-  target_link_libraries(prpll OpenCL::OpenCL)
+if (USE_CUDA)
+  # CUDA backend: replace OpenCL with our CUDA Driver API shim
+  find_package(CUDAToolkit REQUIRED)
+  target_sources(frey-prpll PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/cuda/clwrap_cuda.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cuda/cudawrap.cpp
+  )
+  target_include_directories(frey-prpll PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cuda)
+  target_link_libraries(frey-prpll CUDA::cuda_driver CUDA::nvrtc)
+  # Prevent linking against the real OpenCL library
+  target_compile_definitions(frey-prpll PRIVATE USE_CUDA=1 CUDA_BACKEND=1)
+  message(STATUS "    USE_CUDA")
 else()
-  # Pass -lOpenCL to the linker and hope for the best
-  target_link_libraries(prpll OpenCL)
+  find_package(OpenCL)
+  if (${OpenCL_FOUND})
+    target_link_libraries(frey-prpll OpenCL::OpenCL)
+  else()
+    target_link_libraries(frey-prpll OpenCL)
+  endif()
 endif()
 
-target_include_directories(prpll PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(frey-prpll PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 add_custom_command(
   OUTPUT version.inc

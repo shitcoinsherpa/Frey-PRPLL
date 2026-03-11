@@ -98,10 +98,10 @@ bool Args::hasFlag(const string& key) const { return flags.find(key) != flags.en
 
 void Args::printHelp() {
   printf(R"(
-PRPLL is "PRobable Prime and Lucas-Lehmer Categorizer", AKA "Purple-cat"
-PRPLL is under active development and not ready for production use.
+Frey-PRPLL is "PRobable Prime and Lucas-Lehmer Categorizer", AKA "Purple-cat"
+Frey-PRPLL is under active development and not ready for production use.
 
-PRPLL is an OpenCL (GPU) program for primality testing Mersenne numbers (of the form 2^n - 1).
+Frey-PRPLL is an OpenCL/CUDA (GPU) program for primality testing Mersenne numbers (of the form 2^n - 1).
 
 To check that OpenCL is installed correctly use the command "clinfo". If clinfo does not find any
 devices or otherwise fails, this program will not run.
@@ -110,12 +110,12 @@ This program is tested on Linux/ROCm (AMD GPUs); it may also run on Windows and 
 
 For information about Mersenne primes search see https://www.mersenne.org/
 
-Run "prpll -h"; If this displays a list of OpenCL devices, it means that PRPLL is detecting the GPUs
+Run "frey-prpll -h"; If this displays a list of OpenCL devices, it means that Frey-PRPLL is detecting the GPUs
 and should be able to run.
 
 
 Worktodo:
-PRPLL keeps the active tasks in per-worker files worktodo-0.txt, worktodo-1.txt etc in the local directory.
+Frey-PRPLL keeps the active tasks in per-worker files worktodo-0.txt, worktodo-1.txt etc in the local directory.
 These per-worker files are supplied from the global worktodo.txt file if -pool is used.
 In turn the global worktodo.txt can be supplied through the primenet.py script,
 either the one located at gpuowl/tools/primenet.py or https://download.mersenne.ca/primenet.py
@@ -124,14 +124,14 @@ It is also possible to manually add exponents by adding lines of the form "PRP=1
 
 
 The configuration options listed below can be passed on the command line or can be put in a file
-named "config.txt" in the prpll run directory.
+named "config.txt" in the frey-prpll run directory.
 
 
 -h                 : print general help, list of FFTs, list of devices
 -info <fft>        : print detailed information about the given FFT; e.g. -h 1K:13:256
 -dir <folder>      : specify local work directory (containing worktodo.txt, results.txt, config.txt, gpuowl.log)
 -pool <dir>        : specify a directory with the shared (pooled) worktodo.txt and results.txt
-                     Multiple PRPLL instances, each in its own directory, can share a pool of assignments and report
+                     Multiple Frey-PRPLL instances, each in its own directory, can share a pool of assignments and report
                      the results back to the common pool.
 -verbose           : print more log, useful for developers
 -version           : print only the version and exit
@@ -285,7 +285,7 @@ void Args::parse(const string& line) {
       printHelp();
       throw "help";
     } else if (key == "-version") {
-      // log("PRPLL %s\n", VERSION);
+      // log("Frey-PRPLL %s\n", VERSION);
       throw "version";
     } else if (key == "-info") {
       if (s.empty()) {
