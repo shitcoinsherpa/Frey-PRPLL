@@ -245,15 +245,26 @@ int clCompileProgram(cl_program prog, unsigned nDevices, const cl_device_id* dev
   snprintf(archOpt, sizeof(archOpt), "--gpu-architecture=sm_%d%d", major, minor);
 
   // Parse OpenCL options string into NVRTC options
-  // Convert: -cl-std=CL2.0 → -std=c++17
-  //          -cl-finite-math-only → -use_fast_math
-  //          -Dfoo=bar → -Dfoo=bar (pass through)
+  // Convert OpenCL build options to NVRTC equivalents:
+  //   -cl-std=CL2.0         → -std=c++17
+  //   -cl-finite-math-only  → --fmad=true (enable FMA contraction, the safe subset)
+  //   -Dfoo=bar             → -Dfoo=bar (pass through)
   vector<string> nvrtcOpts;
   nvrtcOpts.push_back(archOpt);
   nvrtcOpts.push_back("-default-device");
   nvrtcOpts.push_back("-std=c++17");
   nvrtcOpts.push_back("-w");  // Suppress NVRTC macro redefinition warnings
-  // nvrtcOpts.push_back("--extra-device-vectorization");
+
+  // FMA contraction: OpenCL uses -cl-finite-math-only + #pragma OPENCL FP_CONTRACT ON
+  // to allow the compiler to contract a*b+c into FMA instructions. NVRTC's --fmad=true
+  // is the safe equivalent — it ONLY enables FMA contraction without the dangerous
+  // parts of -use_fast_math (no flush-to-zero, no reduced-precision division/sqrt).
+  // This is critical for FFT performance: every butterfly is multiply-add pairs.
+  nvrtcOpts.push_back("--fmad=true");
+
+  // NOTE: --restrict (all kernel pointers are __restrict__) was tested but causes GPU read
+  // errors — some PRPLL kernels use in-place operations where in/out buffers alias.
+  // Do NOT enable globally. The compiler still auto-uses __ldg() for const pointers on sm_35+.
 
   // Debug: dump full options string
   {
@@ -291,8 +302,9 @@ int clCompileProgram(cl_program prog, unsigned nDevices, const cl_device_id* dev
         }
         nvrtcOpts.push_back(tok);
       } else if (tok == "-cl-finite-math-only" || tok == "-cl-fast-relaxed-math") {
-        // Not safe: -use_fast_math can cause numerical issues in tailMul
-        // nvrtcOpts.push_back("-use_fast_math");
+        // FMA contraction already enabled above via --fmad=true.
+        // Do NOT use -use_fast_math here — it enables flush-to-zero and
+        // reduced-precision division/sqrt which breaks tailMul accuracy.
       }
       // Skip other -cl-* options (not applicable to NVRTC)
     }

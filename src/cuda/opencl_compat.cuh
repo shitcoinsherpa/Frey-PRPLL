@@ -20,7 +20,8 @@
 #define __local
 #define local
 
-// __constant / constant → const (CUDA __constant__ is file-scope only)
+// __constant / constant → const (CUDA __constant__ is file-scope only, can't be used
+// for kernel params). The compiler auto-uses __ldg() for const pointers on sm_35+.
 #define __constant const
 #define constant const
 
@@ -313,10 +314,10 @@ __device__ __forceinline__ unsigned int mad_hi(unsigned int a, unsigned int b, u
 // then consumer does: atomic_load(flag) in spin loop, bar, threadfence, read data.
 // We minimize redundant fences while maintaining correctness.
 __device__ __forceinline__ void atomic_store_uint(volatile unsigned int* p, unsigned int v) {
-  // Release store: ensure prior writes (carry data) are visible before flag.
-  // Single __threadfence() before store is sufficient — the caller already did
-  // write_mem_fence + bar() which handles shared memory ordering.
-  __threadfence();
+  // Volatile store only — no fence needed here. The caller always does
+  // write_mem_fence(CLK_GLOBAL_MEM_FENCE) [= __threadfence()] before calling
+  // atomic_store(), which already orders all prior writes before this store.
+  // Adding a second __threadfence() here was redundant but costly (~100-400 cycles).
   *p = v;
 }
 __device__ __forceinline__ unsigned int atomic_load_uint(volatile unsigned int* p) {

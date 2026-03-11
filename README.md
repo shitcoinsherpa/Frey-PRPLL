@@ -8,20 +8,13 @@ PRPLL (by Mihai Preda, with contributions from George Woltman) is the leading GP
 
 Tested on **NVIDIA GeForce RTX 4090** (Ada Lovelace, sm_89, 24GB VRAM):
 
-| Exponent | Mersenne # | FFT Size | bpw | µs/iter | iter/s |
-|----------|-----------|----------|------|---------|--------|
-| 1.26M | M33 | 256K | 4.80 | 68 | 14,706 |
-| 2.98M | M34 | 256K | 11.35 | 45 | 22,222 |
-| 13.5M | M39 | 512K | 25.69 | 58 | 17,241 |
-| 30.4M | M45 | 1M | 28.99 | 79 | 12,658 |
-| 57.9M | M48 | 2M | 27.60 | 141 | 7,092 |
-| 82.6M | M51 | 2M | 39.38 | 202 | 4,950 |
-| 136M | M52 | 4M | 32.49 | 476 | 2,101 |
-| 332M | frontier | 8M | 39.60 | 2,627 | 381 |
+| Exponent | FFT Size | bpw | µs/iter | iter/s | Notes |
+|----------|----------|------|---------|--------|-------|
+| 136M | 4M | 32.49 | 264 | 3,788 | tuned, NTT GF31+GF61 |
 
-For comparison, the Radeon VII (the long-time GIMPS champion) does ~2,000 µs/iter at ~150M via stock PRPLL OpenCL — Frey-PRPLL on RTX 4090 is **~5x faster**. Performance is comparable to NVIDIA A100 datacenter GPUs running stock PRPLL via OpenCL.
+The 136M result uses FFT config `3:512:16:256:202` (NTT over GF(2^31-1) x GF(2^61-1)), found via `-tune`. For comparison, the best documented OpenCL PRPLL result on RTX 4090 for this exponent range is ~425 µs/iter ([NVIDIA Developer Forums](https://forums.developer.nvidia.com/t/integer-ntt-on-rtx-20xx-a100-vs-rtx-30xx-40xx-50xx/350124)).
 
-Other NVIDIA GPUs with CUDA 12.0+ should work but have not been benchmarked yet. Performance will scale with GPU compute capability and memory bandwidth.
+Other NVIDIA GPUs with CUDA 12.0+ should work but have not been benchmarked yet. Performance will scale with GPU compute capability and memory bandwidth. Use `-tune` to find the optimal FFT configuration for your hardware.
 
 ## How It Works
 
