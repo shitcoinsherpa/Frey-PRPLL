@@ -29,7 +29,9 @@ ll-*/
 proof-*/
 proof/
 
-# Scripts (dev-local)
+# Run directory and launcher (local)
+run/
+run.bat
 run_test.bat
 run_test.ps1
 m.sh
