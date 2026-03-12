@@ -245,7 +245,7 @@ string clDefines(const Args& args, cl_device_id id, FFTConfig fft, const vector<
 
   // Default value for -use options that must also be parsed in C++ code
   tail_single_wide = 0, tail_single_kernel = 1;         // Default tailSquare is double-wide in one kernel
-  in_place = 0;                                         // Default is not in-place
+  in_place = isNvidiaGpu(id) ? 1 : 0;                    // Default is in-place for NVIDIA, not in-place for AMD
   pad_size = isAmdGpu(id) ? 256 : 0;                    // Default is 256 bytes for AMD, 0 for others
 
   // Validate -use options
@@ -295,6 +295,9 @@ string clDefines(const Args& args, cl_device_id id, FFTConfig fft, const vector<
     if (k == "INPLACE") in_place = atoi(v.c_str());
     if (k == "PAD") pad_size = atoi(v.c_str());
   }
+
+  // Ensure INPLACE is in the config map for kernel defines (auto-detected or from -use)
+  if (in_place && !config.count("INPLACE")) { config["INPLACE"] = to_string(in_place); }
 
   string defines = toDefine(config);
   if (doLog) { log("config: %s\n", defines.c_str()); }

@@ -141,7 +141,12 @@ cl_context clCreateContext(const intptr_t*, unsigned nDevices, const cl_device_i
   if (!devices || nDevices == 0) { if (err) *err = CL_INVALID_DEVICE; return nullptr; }
   auto* ctx = new _cl_context;
   ctx->dev = devices[0]->dev;
+#if CUDA_VERSION >= 13000
+  CUctxCreateParams ctxParams{};
+  CUresult r = cuCtxCreate_v4(&ctx->ctx, &ctxParams, 0, ctx->dev);
+#else
   CUresult r = cuCtxCreate(&ctx->ctx, 0, ctx->dev);
+#endif
   if (r != CUDA_SUCCESS) {
     delete ctx;
     if (err) *err = CL_OUT_OF_RESOURCES;
@@ -1133,4 +1138,5 @@ void cudaSetL2Persistent(cl_command_queue q, const std::vector<cl_mem>& buffers)
             buffers.size());
   }
 }
+
 
