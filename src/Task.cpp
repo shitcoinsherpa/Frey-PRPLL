@@ -161,7 +161,9 @@ void Task::writeResultPRP(FFTConfig fft, const Args &args, u32 instance, bool is
                         json("residue-type", 1),
                         json("errors", vector<string>{json("gerbicz", nErrors)}),
                         json("fft-type", ffttype(fft)),
-                        json("fft-length", fft.size())
+                        json("fft-length", fft.size()),
+                        json("shift-count", 0),
+                        json("error-code", "00000000"),
   };
 
   // "proof":{"version":1, "power":6, "hashsize":64, "md5":"0123456789ABCDEF"}, 
