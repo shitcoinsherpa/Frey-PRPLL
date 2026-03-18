@@ -21,15 +21,36 @@
 // #include <format> from GCC-13 onwards
 
 void gpuWorker(GpuCommon shared, Queue *q, i32 instance) {
-  // LogContext context{(instance ? shared.args->tailDir() : ""s) + to_string(instance) + ' '};
-  // log("Starting worker %d\n", instance);
   if (instance > 0) {
     initLog(("frey-prpll-"s + to_string(instance) + ".log").c_str());
     log("Frey-PRPLL %s, instance %d\n", VERSION, instance);
   }
 
   try {
-    while (auto task = Worktodo::getTask(*shared.args, instance)) { task->execute(shared, q, instance); }
+    while (auto task = Worktodo::getTask(*shared.args, instance)) {
+      constexpr int MAX_ALLOC_RETRIES = 10;
+      constexpr int RETRY_DELAY_SEC = 15;
+
+      for (int attempt = 0; ; ++attempt) {
+        try {
+          task->execute(shared, q, instance);
+          break;  // success
+        } catch (const std::bad_alloc&) {
+          if (attempt >= MAX_ALLOC_RETRIES) {
+            log("Worker %d: GPU memory allocation failed after %d retries. "
+                "Not enough VRAM for %d concurrent workers at this FFT size. "
+                "Try -workers 1, a smaller exponent, or a GPU with more VRAM.\n",
+                instance, MAX_ALLOC_RETRIES, shared.args->workers);
+            return;
+          }
+          log("Worker %d: GPU memory allocation failed (attempt %d/%d, %.1f GB in use). "
+              "Waiting %ds for another worker to free memory...\n",
+              instance, attempt + 1, MAX_ALLOC_RETRIES,
+              float(AllocTrac::totalAllocBytes()) / (1024 * 1024 * 1024), RETRY_DELAY_SEC);
+          std::this_thread::sleep_for(std::chrono::seconds(RETRY_DELAY_SEC));
+        }
+      }
+    }
   } catch (const char *mes) {
     log("Exception \"%s\"\n", mes);
   } catch (const string& mes) {
@@ -85,9 +106,26 @@ int main(int argc, char **argv) {
     args.parse(mainLine);
     args.setDefaults();
 
-    if (args.maxAlloc) { AllocTrac::setMaxAlloc(args.maxAlloc); }
-
     Context context(getDevice(args.device));
+
+    // Set GPU memory budget: user-specified -maxAlloc, or auto-detect from VRAM
+    {
+      float gpuRamGB = getGpuRamGB(context.deviceId());
+      if (args.maxAlloc) {
+        AllocTrac::setMaxAlloc(args.maxAlloc);
+        log("GPU memory budget: %.1f GB (user-specified), GPU has %.1f GB VRAM\n",
+            float(args.maxAlloc) / (1024 * 1024 * 1024), gpuRamGB);
+      } else if (gpuRamGB > 0) {
+        // Use 90% of VRAM as the allocation limit (leave headroom for driver/OS)
+        size_t autoMax = size_t(gpuRamGB * 0.9f * 1024) * 1024 * 1024;
+        AllocTrac::setMaxAlloc(autoMax);
+        log("GPU memory budget: %.1f GB (auto-detected from %.1f GB VRAM)\n",
+            float(autoMax) / (1024 * 1024 * 1024), gpuRamGB);
+      } else {
+        log("GPU memory budget: %.1f GB (default, VRAM detection unavailable)\n",
+            float(15ULL * 1024 * 1024 * 1024) / (1024 * 1024 * 1024));
+      }
+    }
     Signal signal;
     Background background;
     GpuCommon shared;
