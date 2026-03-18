@@ -632,6 +632,7 @@ int clSetKernelArg(cl_kernel k, unsigned pos, size_t size, const void* value) {
 // ---- Buffer ----
 
 cl_mem clCreateBuffer(cl_context ctx, cl_mem_flags flags, size_t size, void* hostPtr, int* err) {
+  ensureContextCurrent();
   auto* buf = new _cl_mem;
   buf->size = size;
   CUresult r = cuMemAlloc(&buf->ptr, size);
@@ -651,6 +652,7 @@ cl_mem clCreateBuffer(cl_context ctx, cl_mem_flags flags, size_t size, void* hos
 
 int clReleaseMemObject(cl_mem buf) {
   if (buf) {
+    ensureContextCurrent();
     g_allocatedBuffers.erase(buf);
     cuMemFree(buf->ptr);
     delete buf;
@@ -1063,12 +1065,14 @@ int clGetKernelWorkGroupInfo(cl_kernel k, cl_device_id dev, cl_kernel_work_group
 // ---- SVM (not used but must exist) ----
 
 void* clSVMAlloc(cl_context, cl_svm_mem_flags, size_t size, unsigned) {
+  ensureContextCurrent();
   CUdeviceptr ptr;
   cuMemAlloc(&ptr, size);
   return (void*)(uintptr_t)ptr;
 }
 
 void clSVMFree(cl_context, void* ptr) {
+  ensureContextCurrent();
   cuMemFree((CUdeviceptr)(uintptr_t)ptr);
 }
 
